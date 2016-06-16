@@ -1,0 +1,24 @@
+/** 
+ * This script contains the settings for the Rubik's Cube solver.
+ *
+ * This is part of the 'Solving Rubik's Cubes' guide on http://xill.io
+ *
+ * @author Geert Konijnendijk
+ *
+ */
+
+var settings = {
+    /*
+     * The number of twists to use when scramble the cube thatś going to be solved
+     */
+    "initialTwists": 5,
+    
+    /*
+     * Print progress for every logFrequency nodes remaining on the current search depth
+     */
+    "logFrequency": 100
+};
+
+function getSettings() {
+    return settings;
+}

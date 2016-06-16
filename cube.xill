@@ -1,0 +1,225 @@
+/**
+ * This script contains code for storing and manipulating a Rubik's Cube.
+ *
+ * A cube is stored as an OBJECT: {cube:[...]}
+ *
+ * The cube field is a one-dimensional list with 6x9 elements where each face has an index:
+ *
+ *    111
+ *    111
+ *    111
+ * 000222444555
+ * 000222444555
+ * 000222444555
+ *    333
+ *    333
+ *    333
+ *
+ * And each face can be indexed like this:
+ * 
+ * 012
+ * 345
+ * 678
+ *
+ * So the middle square of face 2 can be accessed by calling:
+ *
+ * rubiksCube.cube[2*9+4]
+ *
+ * This will result in a number from 0 up to and including 5, each one representing a color. 
+ *
+ * Faces can also be indexed as separate rows or columns (using the getRow, setRow, getColumn and setColumn functions):
+ *
+ * 000  012
+ * 111  012
+ * 222  012
+ *
+ * This is part of the 'Solving Rubik's Cubes' guide on http://xill.io
+ *
+ * @author Geert Konijnendijk
+ *
+ */
+
+use Collection;
+use Hash;
+use String;
+use System;
+
+/*
+ * Create a fully solved cube object
+ */
+function createSolvedCube() {
+    var cube=[];
+    var index=0;
+    var color=0;
+    // Create 6 faces with 9 squares each
+    while (index < 6*9) {
+        cube[index]=color;
+        
+        index++;
+        if (index % 9==0) {
+            color++;
+        }
+    }
+    
+    return createCube(cube);
+}
+
+/*
+ * Rotate a face of a cube
+ * face is an index of a face
+ */
+function twistFace(cube, face, times) {
+    var old = cube.cube;
+    var new;
+    while (times > 0) {
+        new = Collection.duplicate(old);
+        rotate(old, new, face);
+        twist(old, new, face);
+        old = new;
+        times--;
+    }
+    return createCube(new);
+}
+
+/*
+ * Create a string that should be used for printing the cube
+ */
+function printCube(cube) {
+    var formatList = [];
+    var rowIndex = 0;
+    // Face 1
+    while (rowIndex < 3) {
+        formatList[] = String.join(getRow(cube.cube, 1, rowIndex));
+        rowIndex++;
+    }
+    // Faces 0,2,4 and 5
+    var faces = [0, 2, 4, 5];
+    rowIndex = 0;
+    while (rowIndex < 3) {
+        foreach (face in faces) {
+            formatList[] = String.join(getRow(cube.cube, face, rowIndex));
+        }
+        rowIndex++;
+    }
+    // Face 3
+    rowIndex = 0;
+    while (rowIndex < 3) {
+        formatList[] = String.join(getRow(cube.cube, 3, rowIndex));
+        rowIndex++;
+    }
+
+    return String.format("   %s\n   %s\n   %s\n%s%s%s%s\n%s%s%s%s\n%s%s%s%s\n   %s\n   %s\n   %s", formatList);
+}
+
+/*
+ * Create the object containing the cube list
+ */
+private function createCube(data) {
+    return {"cube":data};
+ }
+
+/*
+ * Rotate one face 90 degrees, but only the squares on other faces
+ */
+private function twist(oldCube, newCube, face) {
+    if (face == 0) {
+        setColumn(newCube, getColumn(oldCube, 5, 2), 1, 0);
+        setColumn(newCube, getColumn(oldCube, 1, 0), 2, 0);
+        setColumn(newCube, getColumn(oldCube, 2, 0), 3, 0);
+        setColumn(newCube, getColumn(oldCube, 3, 0), 5, 2);
+    } else if (face == 1) {
+        setRow(newCube, getRow(oldCube, 0, 0), 2, 0);
+        setRow(newCube, getRow(oldCube, 2, 0), 4, 0);
+        setRow(newCube, getRow(oldCube, 4, 0), 5, 0);
+        setRow(newCube, getRow(oldCube, 5, 0), 0, 0);
+    } else if (face == 2) {
+        setColumn(newCube, getRow(oldCube, 3, 0), 0, 2);
+        setRow(newCube, getColumn(oldCube, 0, 2), 1, 2);
+        setColumn(newCube, getRow(oldCube, 1, 2), 4, 0);
+        setRow(newCube, getColumn(oldCube, 4, 0), 3, 0);
+    } else if (face == 3) {
+        setRow(newCube, getRow(oldCube, 0, 2), 2, 2);
+        setRow(newCube, getRow(oldCube, 2, 2), 4, 2);
+        setRow(newCube, getRow(oldCube, 4, 2), 5, 2);
+        setRow(newCube, getRow(oldCube, 5, 2), 0, 2);
+    } else if (face == 4) {
+        setColumn(newCube, getColumn(oldCube, 5, 0), 1, 2);
+        setColumn(newCube, getColumn(oldCube, 1, 2), 2, 2);
+        setColumn(newCube, getColumn(oldCube, 2, 2), 3, 2);
+        setColumn(newCube, getColumn(oldCube, 3, 2), 5, 0);
+    } else if (face == 5) {
+        setColumn(newCube, getRow(oldCube, 3, 2), 0, 0);
+        setRow(newCube, getColumn(oldCube, 0, 0), 1, 0);
+        setColumn(newCube, getRow(oldCube, 1, 0), 4, 2);
+        setRow(newCube, getColumn(oldCube, 4, 2), 3, 2);
+    }
+}
+
+/*
+ * Rotate one face 90 degrees clockwise, but only the squares on the face itself
+ */
+private function rotate(oldCube, newCube, face) {
+    var index = 0;
+    while (index<9){
+        var x = index % 3;
+        var y = index / 3;
+        
+        var newX = y;
+        var newY = 2-x;
+        
+        var newIndex = newY * 3 + newX;
+        
+        newCube[face*9 + newIndex] = oldCube[face*9 + index];
+        index++;
+    }
+}
+
+/*
+ * Calculate the first index of of a row in the cube list
+ */
+private function getRowStart(face, rowIndex) {
+    return face * 9 + rowIndex * 3;
+}
+
+/*
+ * Calculate the first index of of a column in the cube list
+ */
+private function getColumnStart(face, columnIndex) {
+    return face * 9 + columnIndex;
+}
+
+/*
+ * Get a row as a list of 3 values
+ */
+private function getRow(cube, face, rowIndex) {
+    var rowStart = getRowStart(face, rowIndex);
+    return [cube[rowStart], cube[rowStart+1], cube[rowStart+2]];
+}
+
+/*
+ * Get a column as a list of 3 values
+ */
+private function getColumn(cube, face, columnIndex) {
+    var colStart = getColumnStart(face, columnIndex);
+    return [cube[colStart], cube[colStart+3], cube[colStart+6]];
+}
+
+/*
+ * Set a row in a cube from a list of 3 values
+ */
+private function setRow(cube, row, face, rowIndex) {
+    var rowStart = getRowStart(face, rowIndex);
+    cube[rowStart] = row[0];
+    cube[rowStart+1] = row[1];
+    cube[rowStart+2] = row[2];
+}
+
+/*
+ * Set a column in a cube from a list of 3 values
+ */
+private function setColumn(cube, column, face, columnIndex) {
+    var columnStart = getColumnStart(face, columnIndex);
+    cube[columnStart] = column[0];
+    cube[columnStart+3] = column[1];
+    cube[columnStart+6] = column[2];
+}

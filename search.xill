@@ -1,0 +1,126 @@
+/** 
+ * This script contains a breadth first search algorithm for solving Rubik's Cubes. 
+ *
+ * This is part of the 'Solving Rubik's Cubes' guide on http://xill.io
+ *
+ * @author Geert Konijnendijk
+ *
+ */
+
+use Collection;
+use Math;
+use System;
+
+include cube;
+include settings;
+
+
+var settings = getSettings();
+
+/*
+ * Creates a list of new cubes, one for each possible twist of the original cube and sets cube.children 
+ */
+function generateChildren(cube) {
+    var children = [];
+    var face = 0;
+    // Rotate both clockwise and counterclockwise (3 twists is the same as counter-clockwise)
+    while (face<6) {
+        foreach (times in [1, 3]) {
+            var child = twistFace(cube, face, times);
+            child.parent = cube;
+            child.twisted = face;
+            child.twistTimes = times;
+            child.depth = cube.depth + 1;
+            children[] = child;
+        }
+        face++;
+    }
+    return children;
+}
+
+/*
+ * Walk through the search tree and iteratively build the solution
+ */ 
+function buildSolution(solvedCube) {
+    var solution = [solvedCube];
+    var current = solvedCube.parent;
+    while (current!=null) {
+        solution[] = current;
+        current = current.parent;
+    }
+    return solution;
+}
+
+/*
+ * The breadth-first search
+ */
+function searchSolution(startCube, solvedCube) {
+    startCube.depth = 0;
+    var todo = [startCube];
+    var currentDepth = 0;
+    var itemsLeft = 1;
+    while (Collection.length(todo) > 0) {
+        var current = todo[0];
+        Collection.remove(todo, 0);
+        if (current.depth > currentDepth) {
+            currentDepth = current.depth;
+            itemsLeft = Collection.length(todo);
+            System.print("Starting twist " :: (currentDepth + 1) :: ", work list contains " :: Collection.length(todo) :: " items");
+        }
+        
+        var children = generateChildren(current);
+        foreach (child in children) {
+            if (child.cube == solvedCube) {
+                return buildSolution(child);
+            }
+            todo[] = child;
+        }
+        itemsLeft--;
+        if (itemsLeft % settings.logFrequency == 0) {
+            System.print("Items left at this depth: " :: itemsLeft);
+        }
+    }
+    return null;
+}
+
+System.print("Scrambling cube");
+var initialTwists = settings.initialTwists;
+
+/*
+ * Create a new cube an scramble it
+ */
+var initial = createSolvedCube();
+var solvedCube = initial.cube;
+while (initialTwists > 0) {
+    var face = Math.random(6);
+    initial = twistFace(initial, face, 1);
+    initialTwists--;
+    System.print("Twisted face " :: face);
+}
+
+/*
+ * Search for a solution
+ */
+System.print("Going to solve: ");
+System.print(printCube(initial));
+
+System.print("Solving cube");
+var solution = searchSolution(initial, solvedCube);
+
+/*
+ * Print the solution
+ */
+System.print("Found solution: ");
+foreach (cube in Collection.reverse(solution)) {
+    if (cube.twisted != null) {
+        var rotation; 
+        if (cube.twistTimes == 1) {
+            rotation = "clockwise";
+        }
+        else if (cube.twistTimes == 3) {
+            rotation = "counter-clockwise";
+        }
+        System.print("Twist face " :: cube.twisted :: " " :: rotation);
+    }
+    System.print(printCube(cube));
+}
